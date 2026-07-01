@@ -17,23 +17,9 @@
 
 <main>
 
-  <!-- Paso 1: configuración del Apps Script y Gemini API -->
-  <section id="config-section" class="card">
-    <h2>1. Configuración</h2>
-    
-    <p class="hint">Pegá acá la URL de tu Google Apps Script (Web App).</p>
-    <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-    
-    <p class="hint" style="margin-top: 15px;">Pegá acá tu Google Gemini API Key (<a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary-color);">Obtenela gratis aquí</a>).</p>
-    <input type="password" id="geminiKeyInput" placeholder="AIzaSy...">
-    
-    <button id="saveConfigBtn" style="margin-top: 15px;">Guardar Configuración</button>
-    <p id="configStatus" class="status"></p>
-  </section>
-
-  <!-- Paso 2: escaneo -->
+  <!-- Escaneo -->
   <section class="card">
-    <h2>2. Escanear carta</h2>
+    <h2>Escanear carta</h2>
     <label class="capture-btn" for="cameraInput">
       📷 Sacar foto de la carta
       <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
@@ -42,9 +28,9 @@
     <p id="ocrStatus" class="status"></p>
   </section>
 
-  <!-- Paso 3: resultado -->
+  <!-- Resultado -->
   <section id="resultSection" class="card" hidden>
-    <h2>3. Carta identificada</h2>
+    <h2>Carta identificada</h2>
 
     <div class="result-box">
       <img id="cardImage" alt="Imagen de la carta">
@@ -84,6 +70,7 @@
   <p>Datos de cartas y precios vía <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a> (gratis, sin API key).</p>
 </footer>
 
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

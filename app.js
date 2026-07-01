@@ -1,17 +1,12 @@
 // ------------------------------------------------------------------
-// MTG Scanner - prototipo
-// Flujo: foto -> OCR (Tesseract.js) -> Scryfall API -> Google Apps Script -> Google Sheets
+// MTG Scanner
+// Flujo: foto -> Gemini Vision AI -> Scryfall API -> Google Apps Script -> Google Sheets
+// ------------------------------------------------------------------
+// Las claves APPS_SCRIPT_URL y GEMINI_API_KEY se definen en config.js
+// (cargado antes que este script en index.html, excluido del repo via .gitignore)
 // ------------------------------------------------------------------
 
-const STORAGE_KEY = "mtgScannerScriptUrl";
-const GEMINI_KEY_STORAGE = "mtgScannerGeminiKey";
-
 const els = {
-  scriptUrlInput: document.getElementById("scriptUrlInput"),
-  geminiKeyInput: document.getElementById("geminiKeyInput"),
-  saveConfigBtn: document.getElementById("saveConfigBtn"),
-  configStatus: document.getElementById("configStatus"),
-
   cameraInput: document.getElementById("cameraInput"),
   preview: document.getElementById("preview"),
   ocrStatus: document.getElementById("ocrStatus"),
@@ -33,42 +28,6 @@ const els = {
 
 let currentCard = null; // último resultado de Scryfall
 
-// --------------------------- Configuración ---------------------------
-
-function loadConfig() {
-  const scriptUrl = localStorage.getItem(STORAGE_KEY);
-  if (scriptUrl) {
-    els.scriptUrlInput.value = scriptUrl;
-  }
-  const geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
-  if (geminiKey) {
-    els.geminiKeyInput.value = geminiKey;
-  }
-  
-  if (scriptUrl && geminiKey) {
-    setStatus(els.configStatus, "Configuración guardada ✓", "ok");
-  }
-}
-
-els.saveConfigBtn.addEventListener("click", () => {
-  const url = els.scriptUrlInput.value.trim();
-  const key = els.geminiKeyInput.value.trim();
-  
-  if (url && !url.startsWith("https://script.google.com/")) {
-    setStatus(els.configStatus, "Pegá una URL válida de Apps Script (/exec)", "err");
-    return;
-  }
-  if (!key) {
-    setStatus(els.configStatus, "Pegá tu API Key de Gemini", "err");
-    return;
-  }
-  
-  localStorage.setItem(STORAGE_KEY, url);
-  localStorage.setItem(GEMINI_KEY_STORAGE, key);
-  setStatus(els.configStatus, "Guardado ✓", "ok");
-});
-
-loadConfig();
 
 // --------------------------- Captura + OCR ---------------------------
 
@@ -95,17 +54,11 @@ els.cameraInput.addEventListener("change", async (e) => {
 });
 
 async function runVisionAndSearch(canvas) {
-  const geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
-  if (!geminiKey) {
-    setStatus(els.ocrStatus, "Falta la API Key de Gemini. Guardala en la configuración.", "err");
-    return;
-  }
-
   setStatus(els.ocrStatus, "Analizando imagen con IA (Gemini)...");
   try {
     const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
     
-    const cardData = await identifyCardWithGemini(base64Image, geminiKey);
+    const cardData = await identifyCardWithGemini(base64Image, GEMINI_API_KEY);
     
     if (!cardData || !cardData.name) {
       setStatus(els.ocrStatus, "La IA no pudo leer el nombre. Escribilo a mano abajo.", "err");
@@ -237,11 +190,7 @@ els.researchBtn.addEventListener("click", async () => {
 // --------------------------- Guardar en Google Sheets ---------------------------
 
 els.addToSheetBtn.addEventListener("click", async () => {
-  const scriptUrl = localStorage.getItem(STORAGE_KEY);
-  if (!scriptUrl) {
-    setStatus(els.sheetStatus, "Primero guardá la URL de tu Apps Script (paso 1).", "err");
-    return;
-  }
+  const scriptUrl = APPS_SCRIPT_URL;
   if (!currentCard) return;
 
   const payload = {
