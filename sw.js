@@ -1,4 +1,4 @@
-const CACHE = "mtg-scanner-v1";
+const CACHE = "mtg-scanner-v2";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -9,7 +9,17 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener("fetch", (event) => {
