@@ -50,18 +50,26 @@ els.cameraInput.addEventListener("change", async (e) => {
   ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
   canvas.hidden = false;
 
-  await runVisionAndSearch(canvas);
+  // Reducimos resolución específicamente para Gemini (1024px es más que suficiente)
+  const geminiCanvas = document.createElement("canvas");
+  const maxGeminiWidth = 1024;
+  const gScale = Math.min(1, maxGeminiWidth / canvas.width);
+  geminiCanvas.width = canvas.width * gScale;
+  geminiCanvas.height = canvas.height * gScale;
+  geminiCanvas.getContext("2d").drawImage(canvas, 0, 0, geminiCanvas.width, geminiCanvas.height);
+
+  await runVisionAndSearch(geminiCanvas);
 });
 
 async function runVisionAndSearch(canvas) {
   setStatus(els.ocrStatus, "Analizando imagen con IA (Gemini)...");
   try {
-    const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+    const base64Image = canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
     
     const cardData = await identifyCardWithGemini(base64Image, GEMINI_API_KEY);
     
     if (!cardData || !cardData.name) {
-      setStatus(els.ocrStatus, "La IA no pudo leer el nombre. Escribilo a mano abajo.", "err");
+      setStatus(els.ocrStatus, "La IA no pudo identificar la carta. Escribí el nombre a mano abajo.", "err");
       els.manualSection.hidden = false;
       return;
     }
@@ -70,7 +78,7 @@ async function runVisionAndSearch(canvas) {
     const card = await searchScryfall(cardData.name, cardData.set);
 
     if (!card) {
-      setStatus(els.ocrStatus, "No se encontró la carta en Scryfall. Corregí el nombre abajo.", "err");
+      setStatus(els.ocrStatus, "No se encontró en Scryfall. Corregí el nombre abajo.", "err");
       els.manualNameInput.value = cardData.name;
       els.manualSection.hidden = false;
       return;
@@ -79,8 +87,8 @@ async function runVisionAndSearch(canvas) {
     setStatus(els.ocrStatus, "¡Carta identificada! ✓", "ok");
     showCard(card);
   } catch (err) {
-    console.error(err);
-    setStatus(els.ocrStatus, "Error analizando la imagen. Probá de nuevo o escribí a mano.", "err");
+    console.error("Vision error:", err);
+    setStatus(els.ocrStatus, `Error: ${err.message}. Escribi el nombre a mano.`, "err");
     els.manualSection.hidden = false;
   }
 }
@@ -103,17 +111,27 @@ async function identifyCardWithGemini(base64Data, apiKey) {
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) throw new Error("Gemini API error");
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Gemini ${response.status}: ${errBody.slice(0, 120)}`);
+  }
 
   const data = await response.json();
+  
+  // Detectar si Gemini bloqueó la respuesta por safety filters
+  if (!data.candidates || data.candidates.length === 0) {
+    throw new Error("Gemini no devolvió candidatos (posible filtro de seguridad)");
+  }
+  
   const textResponse = data.candidates[0].content.parts[0].text;
   
   try {
     const cleanJson = textResponse.replace(/```json\n?/g, "").replace(/```/g, "").trim();
     return JSON.parse(cleanJson);
   } catch (e) {
-    console.error("Failed to parse Gemini response:", textResponse);
-    return null;
+    // Si no puede parsear JSON, intentar extraer el nombre del texto libre
+    console.warn("Gemini respuesta no-JSON:", textResponse);
+    throw new Error(`Gemini respondió pero no en formato JSON: "${textResponse.slice(0, 80)}"`);
   }
 }
 

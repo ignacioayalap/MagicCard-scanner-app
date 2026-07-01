@@ -1,4 +1,4 @@
-const CACHE = "mtg-scanner-v5";
+const CACHE = "mtg-scanner-v6";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "config.js", "manifest.json"];
 
 self.addEventListener("install", (event) => {
