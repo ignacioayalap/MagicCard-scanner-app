@@ -40,10 +40,15 @@ jobs:
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          cat > config.js << EOF
-          const APPS_SCRIPT_URL = "${APPS_SCRIPT_URL}";
-          const GEMINI_API_KEY  = "${GEMINI_API_KEY}";
-          EOF
+          node <<'NODE'
+          const fs = require("fs");
+          const appsScriptUrl = (process.env.APPS_SCRIPT_URL || "").trim();
+          const geminiApiKey = (process.env.GEMINI_API_KEY || "").trim();
+          const content =
+            "const APPS_SCRIPT_URL = " + JSON.stringify(appsScriptUrl) + ";\n" +
+            "const GEMINI_API_KEY  = " + JSON.stringify(geminiApiKey) + ";\n";
+          fs.writeFileSync("config.js", content);
+          NODE
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

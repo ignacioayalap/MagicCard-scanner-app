@@ -1,5 +1,5 @@
-const CACHE = "mtg-scanner-v7";
-const ASSETS = ["./", "index.html", "styles.css", "app.js", "config.js", "manifest.json"];
+const CACHE = "mtg-scanner-v8";
+const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -23,12 +23,16 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Solo cacheamos los assets propios. Todo lo demás (Scryfall, Apps Script,
-  // Tesseract CDN) va siempre a la red.
   const url = new URL(event.request.url);
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request))
-    );
+  if (url.origin !== self.location.origin) return;
+
+  // config.js se genera en el deploy: siempre ir a red para no quedar con una versión rota en caché.
+  if (url.pathname.endsWith("/config.js")) {
+    event.respondWith(fetch(event.request));
+    return;
   }
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
+  );
 });
