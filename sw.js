@@ -1,5 +1,5 @@
-const CACHE = "mtg-scanner-v8";
-const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.json"];
+const CACHE = "mtg-scanner-v9";
+const ASSETS = ["./", "index.html", "styles.css", "manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,8 +26,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // config.js se genera en el deploy: siempre ir a red para no quedar con una versión rota en caché.
-  if (url.pathname.endsWith("/config.js")) {
+  // Siempre ir a red para archivos que cambian entre deploys.
+  if (url.pathname.endsWith("/config.js") || url.pathname.endsWith("/app.js")) {
     event.respondWith(fetch(event.request));
     return;
   }

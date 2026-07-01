@@ -30,7 +30,11 @@ let currentCard = null; // último resultado de Scryfall
 
 function isConfigReady() {
   try {
-    return Boolean(APPS_SCRIPT_URL && GEMINI_API_KEY);
+    const key = GEMINI_API_KEY;
+    const url = APPS_SCRIPT_URL;
+    if (!key || !url) return false;
+    if (key.startsWith("http")) return false;
+    return true;
   } catch {
     return false;
   }
@@ -39,7 +43,7 @@ function isConfigReady() {
 if (!isConfigReady()) {
   setStatus(
     els.ocrStatus,
-    "Configuración incompleta: falta config.js con GEMINI_API_KEY y APPS_SCRIPT_URL.",
+    "Configuración incompleta o desactualizada. Borrá caché del sitio y recargá (config.js con GEMINI_API_KEY y APPS_SCRIPT_URL).",
     "err"
   );
 }
