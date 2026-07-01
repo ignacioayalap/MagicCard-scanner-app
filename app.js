@@ -28,12 +28,29 @@ const els = {
 
 let currentCard = null; // último resultado de Scryfall
 
+function isConfigReady() {
+  try {
+    return Boolean(APPS_SCRIPT_URL && GEMINI_API_KEY);
+  } catch {
+    return false;
+  }
+}
+
+if (!isConfigReady()) {
+  setStatus(
+    els.ocrStatus,
+    "Configuración incompleta: falta config.js con GEMINI_API_KEY y APPS_SCRIPT_URL.",
+    "err"
+  );
+}
+
 
 // --------------------------- Captura + OCR ---------------------------
 
 els.cameraInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
+  if (!isConfigReady()) return;
 
   els.resultSection.hidden = true;
   els.manualSection.hidden = true;
@@ -208,6 +225,10 @@ els.researchBtn.addEventListener("click", async () => {
 // --------------------------- Guardar en Google Sheets ---------------------------
 
 els.addToSheetBtn.addEventListener("click", async () => {
+  if (!isConfigReady()) {
+    setStatus(els.sheetStatus, "Falta APPS_SCRIPT_URL en config.js.", "err");
+    return;
+  }
   const scriptUrl = APPS_SCRIPT_URL;
   if (!currentCard) return;
 
