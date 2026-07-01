@@ -105,13 +105,16 @@ async function runVisionAndSearch(canvas) {
     showCard(card);
   } catch (err) {
     console.error("Vision error:", err);
-    setStatus(els.ocrStatus, `Error: ${err.message}. Escribi el nombre a mano.`, "err");
+    const hint = String(err.message).includes("API key not valid")
+      ? " La API key de Gemini no es válida: creá una nueva en AI Studio y actualizá el secret."
+      : "";
+    setStatus(els.ocrStatus, `Error: ${err.message}.${hint} Escribi el nombre a mano.`, "err");
     els.manualSection.hidden = false;
   }
 }
 
 async function identifyCardWithGemini(base64Data, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
   
   const payload = {
     contents: [{
@@ -124,7 +127,10 @@ async function identifyCardWithGemini(base64Data, apiKey) {
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
     body: JSON.stringify(payload)
   });
 
