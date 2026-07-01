@@ -48,6 +48,11 @@ El celular necesita acceder a la app por **HTTPS** (o `localhost`) para poder us
   4. En Google Cloud Console, restringí la API key de Gemini por HTTP referrer a `https://tuusuario.github.io/*`.
 
   Para desarrollo local, copiá `config.example.js` a `config.js` y completá los valores a mano (`config.js` no se sube al repo).
+
+  **Si el deploy falla con `Deployment cancelled`:**
+  - En **Actions**, desactivá el workflow `pages-build-deployment` si aparece (choca con el deploy custom).
+  - Esperá a que no haya ningún workflow en ejecución.
+  - Ejecutá **Deploy to GitHub Pages** una sola vez (no hagas push y "Run workflow" al mismo tiempo).
 - **Netlify / Vercel** (plan gratis): arrastrás la carpeta con los archivos y te dan una URL HTTPS al instante.
 - **Probar en tu red local**: si querés probarlo ya mismo desde tu compu, corré un servidor simple en la carpeta (por ejemplo `npx serve .` o `python3 -m http.server`) y abrí esa dirección desde el celular conectado al mismo WiFi. Ojo: sin HTTPS, algunos navegadores igual permiten la cámara en la misma red local, pero no siempre — para uso real conviene GitHub Pages/Netlify.
 

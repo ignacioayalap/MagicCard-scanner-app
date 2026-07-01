@@ -10,18 +10,10 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +27,16 @@ jobs:
             echo "::error::Faltan los secrets APPS_SCRIPT_URL y/o GEMINI_API_KEY en Settings → Secrets and variables → Actions"
             exit 1
           fi
+          if [ "$GEMINI_API_KEY" = "$APPS_SCRIPT_URL" ]; then
+            echo "::error::GEMINI_API_KEY y APPS_SCRIPT_URL tienen el mismo valor. Corregí los secrets."
+            exit 1
+          fi
+          case "$GEMINI_API_KEY" in
+            http://*|https://*)
+              echo "::error::GEMINI_API_KEY no puede ser una URL. Pegá solo la API key de Google AI Studio."
+              exit 1
+              ;;
+          esac
 
       - name: Generate config.js
         env:
@@ -56,6 +58,17 @@ jobs:
         with:
           path: .
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
