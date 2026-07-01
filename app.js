@@ -4,10 +4,12 @@
 // ------------------------------------------------------------------
 
 const STORAGE_KEY = "mtgScannerScriptUrl";
+const GEMINI_KEY_STORAGE = "mtgScannerGeminiKey";
 
 const els = {
   scriptUrlInput: document.getElementById("scriptUrlInput"),
-  saveScriptUrlBtn: document.getElementById("saveScriptUrlBtn"),
+  geminiKeyInput: document.getElementById("geminiKeyInput"),
+  saveConfigBtn: document.getElementById("saveConfigBtn"),
   configStatus: document.getElementById("configStatus"),
 
   cameraInput: document.getElementById("cameraInput"),
@@ -31,27 +33,42 @@ const els = {
 
 let currentCard = null; // último resultado de Scryfall
 
-// --------------------------- Config Apps Script ---------------------------
+// --------------------------- Configuración ---------------------------
 
-function loadScriptUrl() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    els.scriptUrlInput.value = saved;
-    setStatus(els.configStatus, "Conectado ✓", "ok");
+function loadConfig() {
+  const scriptUrl = localStorage.getItem(STORAGE_KEY);
+  if (scriptUrl) {
+    els.scriptUrlInput.value = scriptUrl;
+  }
+  const geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+  if (geminiKey) {
+    els.geminiKeyInput.value = geminiKey;
+  }
+  
+  if (scriptUrl && geminiKey) {
+    setStatus(els.configStatus, "Configuración guardada ✓", "ok");
   }
 }
 
-els.saveScriptUrlBtn.addEventListener("click", () => {
+els.saveConfigBtn.addEventListener("click", () => {
   const url = els.scriptUrlInput.value.trim();
-  if (!url.startsWith("https://script.google.com/")) {
+  const key = els.geminiKeyInput.value.trim();
+  
+  if (url && !url.startsWith("https://script.google.com/")) {
     setStatus(els.configStatus, "Pegá una URL válida de Apps Script (/exec)", "err");
     return;
   }
+  if (!key) {
+    setStatus(els.configStatus, "Pegá tu API Key de Gemini", "err");
+    return;
+  }
+  
   localStorage.setItem(STORAGE_KEY, url);
+  localStorage.setItem(GEMINI_KEY_STORAGE, key);
   setStatus(els.configStatus, "Guardado ✓", "ok");
 });
 
-loadScriptUrl();
+loadConfig();
 
 // --------------------------- Captura + OCR ---------------------------
 
@@ -74,35 +91,34 @@ els.cameraInput.addEventListener("change", async (e) => {
   ctx.drawImage(imgBitmap, 0, 0, canvas.width, canvas.height);
   canvas.hidden = false;
 
-  await runOcrAndSearch(canvas);
+  await runVisionAndSearch(canvas);
 });
 
-async function runOcrAndSearch(canvas) {
-  setStatus(els.ocrStatus, "Leyendo el nombre de la carta...");
+async function runVisionAndSearch(canvas) {
+  const geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+  if (!geminiKey) {
+    setStatus(els.ocrStatus, "Falta la API Key de Gemini. Guardala en la configuración.", "err");
+    return;
+  }
+
+  setStatus(els.ocrStatus, "Analizando imagen con IA (Gemini)...");
   try {
-    // El nombre de una carta de Magic siempre está en una franja
-    // horizontal en la parte superior. Recortamos esa franja para
-    // que el OCR sea más preciso y rápido.
-    const nameCrop = cropTopBand(canvas, 0.14);
-
-    const { data } = await Tesseract.recognize(nameCrop, "eng", {
-      logger: () => {},
-    });
-
-    const candidates = buildNameCandidates(data.text);
-
-    if (candidates.length === 0) {
-      setStatus(els.ocrStatus, "No se pudo leer el nombre. Escribilo a mano abajo.", "err");
+    const base64Image = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+    
+    const cardData = await identifyCardWithGemini(base64Image, geminiKey);
+    
+    if (!cardData || !cardData.name) {
+      setStatus(els.ocrStatus, "La IA no pudo leer el nombre. Escribilo a mano abajo.", "err");
       els.manualSection.hidden = false;
       return;
     }
 
-    setStatus(els.ocrStatus, `Texto leído: "${candidates[0]}". Buscando en Scryfall...`);
-    const card = await searchScryfallFromCandidates(candidates);
+    setStatus(els.ocrStatus, `Leído: "${cardData.name}" (Set: ${cardData.set || '?'}). Buscando en Scryfall...`);
+    const card = await searchScryfall(cardData.name, cardData.set);
 
     if (!card) {
-      setStatus(els.ocrStatus, "No se encontró la carta. Corregí el nombre abajo.", "err");
-      els.manualNameInput.value = candidates[0];
+      setStatus(els.ocrStatus, "No se encontró la carta en Scryfall. Corregí el nombre abajo.", "err");
+      els.manualNameInput.value = cardData.name;
       els.manualSection.hidden = false;
       return;
     }
@@ -111,29 +127,41 @@ async function runOcrAndSearch(canvas) {
     showCard(card);
   } catch (err) {
     console.error(err);
-    setStatus(els.ocrStatus, "Error leyendo la imagen. Probá de nuevo o escribí el nombre a mano.", "err");
+    setStatus(els.ocrStatus, "Error analizando la imagen. Probá de nuevo o escribí a mano.", "err");
     els.manualSection.hidden = false;
   }
 }
 
-function cropTopBand(sourceCanvas, fraction) {
-  const bandHeight = Math.max(40, Math.floor(sourceCanvas.height * fraction));
-  const out = document.createElement("canvas");
-  out.width = sourceCanvas.width;
-  out.height = bandHeight;
-  out.getContext("2d").drawImage(
-    sourceCanvas,
-    0, 0, sourceCanvas.width, bandHeight,
-    0, 0, sourceCanvas.width, bandHeight
-  );
-  return out;
-}
+async function identifyCardWithGemini(base64Data, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  
+  const payload = {
+    contents: [{
+      parts: [
+        { text: "Identify this Magic: The Gathering card. Return ONLY a valid JSON object with 'name' (the exact card name in English) and 'set' (the 3-letter set code if visible or guessable from the expansion symbol, otherwise empty string). Example: {\"name\": \"Black Lotus\", \"set\": \"lea\"}. Do not include markdown formatting or backticks, just the raw JSON." },
+        { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+      ]
+    }]
+  };
 
-function buildNameCandidates(rawText) {
-  return rawText
-    .split("\n")
-    .map((l) => l.replace(/[^a-zA-Z0-9À-ÿ',\s-]/g, "").trim())
-    .filter((l) => l.length >= 3);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) throw new Error("Gemini API error");
+
+  const data = await response.json();
+  const textResponse = data.candidates[0].content.parts[0].text;
+  
+  try {
+    const cleanJson = textResponse.replace(/```json\n?/g, "").replace(/```/g, "").trim();
+    return JSON.parse(cleanJson);
+  } catch (e) {
+    console.error("Failed to parse Gemini response:", textResponse);
+    return null;
+  }
 }
 
 // --------------------------- Scryfall ---------------------------
@@ -145,13 +173,15 @@ async function scryfallFuzzy(name) {
   return res.json();
 }
 
-async function searchScryfallFromCandidates(candidates) {
-  for (const candidate of candidates.slice(0, 3)) {
-    const card = await scryfallFuzzy(candidate);
-    if (card) return card;
-    await sleep(120); // Scryfall pide no golpear la API sin pausas
+async function searchScryfall(name, setCode) {
+  if (setCode) {
+    const url = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&set=${encodeURIComponent(setCode.toLowerCase())}`;
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+    await sleep(100); // Pausa antes del fallback para no saturar Scryfall
   }
-  return null;
+  // Fallback a fuzzy search si no hay set o si falló la búsqueda exacta
+  return await scryfallFuzzy(name);
 }
 
 function sleep(ms) {
