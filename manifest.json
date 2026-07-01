@@ -1,0 +1,10 @@
+{
+  "name": "MTG Scanner",
+  "short_name": "MTG Scanner",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#141420",
+  "theme_color": "#141420",
+  "orientation": "portrait",
+  "icons": []
+}
