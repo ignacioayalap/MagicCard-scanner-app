@@ -20,6 +20,8 @@ const els = {
   researchBtn: document.getElementById("researchBtn"),
   addToSheetBtn: document.getElementById("addToSheetBtn"),
   sheetStatus: document.getElementById("sheetStatus"),
+  foilToggleBtn: document.getElementById("foilToggleBtn"),
+  cardFoilCheckbox: document.getElementById("cardFoilCheckbox"),
 
   manualSection: document.getElementById("manualSection"),
   manualNameInput: document.getElementById("manualNameInput"),
@@ -27,6 +29,19 @@ const els = {
 };
 
 let currentCard = null; // último resultado de Scryfall
+let isFoil = false; // si la carta escaneada/seleccionada es foil
+
+function setFoilState(foil) {
+  isFoil = foil;
+  els.foilToggleBtn.textContent = foil ? "✨ Foil: Sí" : "✨ Foil: No";
+  els.foilToggleBtn.classList.toggle("active", foil);
+  els.foilToggleBtn.setAttribute("aria-pressed", String(foil));
+  if (els.cardFoilCheckbox.checked !== foil) els.cardFoilCheckbox.checked = foil;
+  if (currentCard) updatePriceFields();
+}
+
+els.foilToggleBtn.addEventListener("click", () => setFoilState(!isFoil));
+els.cardFoilCheckbox.addEventListener("change", () => setFoilState(els.cardFoilCheckbox.checked));
 
 function isConfigReady() {
   try {
@@ -194,13 +209,28 @@ function extractImageUrl(card) {
   return "";
 }
 
+function getCardPrices(card, foil) {
+  const prices = card.prices || {};
+  if (foil) {
+    return { usd: prices.usd_foil || null, eur: prices.eur_foil || null };
+  }
+  return { usd: prices.usd || null, eur: prices.eur || null };
+}
+
+function updatePriceFields() {
+  if (!currentCard) return;
+  const { usd, eur } = getCardPrices(currentCard, isFoil);
+  els.cardPriceUsd.value = usd ? `$${usd}` : "N/D";
+  els.cardPriceEur.value = eur ? `€${eur}` : "N/D";
+}
+
 function showCard(card) {
   currentCard = card;
   els.cardImage.src = extractImageUrl(card);
   els.cardName.value = card.name || "";
   els.cardSet.value = card.set_name ? `${card.set_name} (${(card.set || "").toUpperCase()})` : "";
-  els.cardPriceUsd.value = card.prices?.usd ? `$${card.prices.usd}` : "N/D";
-  els.cardPriceEur.value = card.prices?.eur ? `€${card.prices.eur}` : "N/D";
+  els.cardFoilCheckbox.checked = isFoil;
+  updatePriceFields();
   els.resultSection.hidden = false;
   els.sheetStatus.textContent = "";
 }
@@ -242,11 +272,13 @@ els.addToSheetBtn.addEventListener("click", async () => {
   const scriptUrl = APPS_SCRIPT_URL;
   if (!currentCard) return;
 
+  const { usd, eur } = getCardPrices(currentCard, isFoil);
   const payload = {
     name: els.cardName.value,
     setName: els.cardSet.value,
-    priceUsd: currentCard.prices?.usd || "",
-    priceEur: currentCard.prices?.eur || "",
+    foil: isFoil,
+    priceUsd: usd || "",
+    priceEur: eur || "",
     imageUrl: extractImageUrl(currentCard),
     scryfallUri: currentCard.scryfall_uri || "",
   };

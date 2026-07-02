@@ -10,7 +10,7 @@
  */
 
 const SHEET_NAME = "Cartas";
-const HEADERS = ["Fecha", "Imagen", "Nombre", "Edición", "Precio USD", "Precio EUR", "Link Scryfall"];
+const HEADERS = ["Fecha", "Imagen", "Nombre", "Edición", "Foil", "Precio USD", "Precio EUR", "Link Scryfall"];
 
 function doPost(e) {
   try {
@@ -22,6 +22,7 @@ function doPost(e) {
       data.imageUrl ? `=IMAGE("${data.imageUrl}")` : "",
       data.name || "",
       data.setName || "",
+      data.foil ? "Sí" : "No",
       data.priceUsd || "",
       data.priceEur || "",
       data.scryfallUri || "",

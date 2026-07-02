@@ -105,6 +105,31 @@ button:active {
   cursor: pointer;
 }
 
+.toggle-btn {
+  background: #0f0f1a;
+  border: 1px solid #33334d;
+  margin-bottom: 10px;
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.foil-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.foil-checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
 canvas#preview {
   width: 100%;
   border-radius: 10px;

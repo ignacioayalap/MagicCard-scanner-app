@@ -20,6 +20,7 @@
   <!-- Escaneo -->
   <section class="card">
     <h2>Escanear carta</h2>
+    <button type="button" id="foilToggleBtn" class="toggle-btn" aria-pressed="false">✨ Foil: No</button>
     <label class="capture-btn" for="cameraInput">
       📷 Sacar foto de la carta
       <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
@@ -40,6 +41,9 @@
         </label>
         <label>Edición
           <input type="text" id="cardSet" readonly>
+        </label>
+        <label class="foil-checkbox">
+          <input type="checkbox" id="cardFoilCheckbox"> Es Foil
         </label>
         <label>Precio USD
           <input type="text" id="cardPriceUsd" readonly>
@@ -70,7 +74,7 @@
   <p>Datos de cartas y precios vía <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a> (gratis, sin API key).</p>
 </footer>
 
-<script src="config.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
