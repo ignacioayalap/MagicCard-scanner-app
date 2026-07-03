@@ -1,79 +1,91 @@
-# MTG Scanner — prototipo
+# 🪄 MTG Scanner
 
-App web (PWA) para escanear cartas de Magic con la cámara del celular, identificarlas vía [Scryfall](https://scryfall.com) (base de datos y precios gratis, sin API key) y cargarlas automáticamente en una Google Sheet.
+Una aplicación web progresiva (PWA) diseñada para escanear tus cartas de Magic: The Gathering usando la cámara de tu dispositivo, identificarlas de forma inteligente e incorporarlas automáticamente a tu base de datos personal en Google Sheets. 
 
-## Cómo funciona
+Sin necesidad de descargar apps pesadas ni pagar suscripciones, esta herramienta combina **inteligencia artificial** y **APIs gratuitas** para facilitarte el trabajo de inventariar tu colección.
 
-1. Sacás una foto de la carta desde el celular (abre la cámara nativa).
-2. La imagen se envía a **Gemini Vision** para identificar nombre y set de la carta.
-3. Busca el nombre en Scryfall (`fuzzy search`) y trae imagen, edición y precio (USD/EUR).
-4. Mostrás/corregís el resultado y lo agregás con un botón, que manda los datos a un Google Apps Script que escribe la fila en tu Google Sheet (con la imagen embebida vía `=IMAGE()`).
+## ✨ Características
 
-Todo gratis: Scryfall no requiere key, y Google Apps Script + Sheets son gratuitos con tu cuenta de Google normal.
+- 📷 **Escaneo inteligente**: Saca una foto de la carta y la aplicación usará **Gemini 2.5 Flash** para identificar el nombre de la carta y su edición.
+- 🔍 **Búsqueda automática**: Obtiene instantáneamente la imagen de la carta, nombre de la edición y precios actualizados en USD y EUR usando la API pública de **Scryfall**.
+- ✨ **Soporte Foil**: ¡Indica si tu carta es Foil para obtener su precio exacto de mercado!
+- 📝 **Integración con Google Sheets**: Con un solo clic, la carta (incluyendo su imagen, datos y precio) se guarda en tu planilla de Google Sheets personal.
+- 📱 **Instalable (PWA)**: Funciona en el navegador pero puedes instalarla en la pantalla de inicio de tu celular para usarla como una aplicación nativa.
+- 🔄 **Búsqueda manual**: Si la foto salió borrosa, podés escribir el nombre de la carta manualmente y el sistema buscará las coincidencias.
 
-## Archivos
+## 🛠️ Cómo funciona
 
-| Archivo | Qué es |
+1. **Captura**: Abres la app y sacas una foto a tu carta.
+2. **Reconocimiento OCR**: La imagen se reduce de tamaño (para ser rápida y eficiente) y se envía a **Gemini 2.5 Flash**, que extrae el nombre y código de expansión.
+3. **Consulta de Precios**: Ese nombre se busca en **Scryfall** (mediante *fuzzy search* o búsqueda exacta por set), obteniendo la versión correcta de la carta y sus precios.
+4. **Almacenamiento**: Al confirmar y presionar "Agregar a Google Sheets", se hace una petición POST a un **Google Apps Script** propio que añade una nueva fila en tu documento, insertando incluso la imagen con `=IMAGE()`.
+
+Todo el flujo es completamente gratuito: Scryfall no requiere API key y los servicios de Google (Gemini AI Studio, Apps Script y Sheets) tienen cuotas gratuitas más que suficientes para uso personal.
+
+## 📁 Estructura del Proyecto
+
+| Archivo | Descripción |
 |---|---|
-| `index.html`, `styles.css`, `app.js` | La app web (frontend) |
-| `manifest.json`, `sw.js` | Para poder "instalarla" en el celular como PWA |
-| `Code.gs` | Backend que va en Google Apps Script, escribe en tu Sheet |
+| `index.html`, `styles.css`, `app.js` | Frontend de la aplicación web. |
+| `manifest.json`, `sw.js` | Archivos de configuración para que la web actúe como una PWA. |
+| `Code.gs` | Backend (script) que debes instalar en tu Google Apps Script. |
+| `config.example.js` | Plantilla para tus claves de entorno. |
+| `.github/workflows/deploy.yml` | Configuración para el despliegue automático en GitHub Pages. |
 
-## Paso 1 — Crear la Google Sheet y el Apps Script
+## 🚀 Guía de Instalación
 
-1. Andá a [sheets.google.com](https://sheets.google.com) y creá una hoja nueva (ej: "Colección Magic").
-2. En el menú: **Extensiones → Apps Script**.
-3. Borrá el contenido de `Code.gs` que aparece por defecto y pegá el contenido del archivo `Code.gs` de este proyecto.
-4. Guardá el proyecto (ícono de disquete).
-5. Arriba a la derecha, botón **Implementar → Nueva implementación**.
-   - Tipo: **Aplicación web**.
-   - Ejecutar como: **Yo** (tu cuenta).
-   - Quién tiene acceso: **Cualquier usuario**.
-6. Al implementar, Google va a pedirte autorizar permisos (es tu propio script accediendo a tu propia hoja) — aceptá.
-7. Copiá la **URL de la aplicación web** que te da (termina en `/exec`). Esa es la URL que vas a pegar en el paso 1 de la app.
+Para tener tu propio escáner funcionando, debes configurar dos partes: la base de datos (Google Sheets) y la aplicación web.
 
-> Nota de seguridad: "Cualquier usuario" significa que cualquiera que tenga esa URL exacta puede agregar filas a tu hoja. Para un proyecto personal está bien, pero no compartas la URL públicamente. Si más adelante querés cerrarlo más, se puede agregar un token secreto simple en el propio `Code.gs`.
+### Paso 1: Configurar Google Sheets y Apps Script
 
-## Paso 2 — Hostear la app web
+1. Ve a [Google Sheets](https://sheets.google.com) y crea una hoja de cálculo nueva (ej. "Mi Colección de MTG").
+2. En el menú superior, ve a **Extensiones → Apps Script**.
+3. Borra el código por defecto y pega todo el contenido del archivo `Code.gs` incluido en este repositorio.
+4. Guarda el proyecto (icono de disquete).
+5. Arriba a la derecha, haz clic en **Implementar → Nueva implementación**.
+   - **Tipo**: Aplicación web.
+   - **Ejecutar como**: Yo (tu cuenta de Google).
+   - **Quién tiene acceso**: Cualquier usuario.
+6. Dale a "Implementar" y acepta los permisos de seguridad (Google te advertirá que es una app no verificada, ve a "Configuración avanzada" y permite el acceso, ¡es tu propio código!).
+7. Copia la **URL de la aplicación web** (termina en `/exec`). Esta URL es tu `APPS_SCRIPT_URL`.
 
-El celular necesita acceder a la app por **HTTPS** (o `localhost`) para poder usar la cámara. Opciones gratis, de más a menos simple:
+> ⚠️ **Nota de seguridad:** La opción "Cualquier usuario" permite que la app web pueda enviar datos sin pedir login de Google. Mantén tu URL secreta.
 
-- **GitHub Pages** (recomendado): el repo incluye un workflow en `.github/workflows/deploy.yml` que genera `config.js` en el deploy a partir de secrets del repositorio.
+### Paso 2: Desplegar la App Web (Recomendado: GitHub Pages)
 
-  1. En GitHub: **Settings → Secrets and variables → Actions → New repository secret** y creá:
-     - `GEMINI_API_KEY` — tu API key de [Google AI Studio](https://aistudio.google.com/apikey)
-     - `APPS_SCRIPT_URL` — la URL `/exec` del Apps Script (paso 1)
-  2. En **Settings → Pages → Build and deployment**, elegí **Source: GitHub Actions** (no "Deploy from a branch").
-  3. Hacé push a `main` o ejecutá el workflow manualmente en **Actions → Deploy to GitHub Pages → Run workflow**.
-  4. En Google Cloud Console, restringí la API key de Gemini por HTTP referrer a `https://tuusuario.github.io/*`.
+Para poder acceder a la cámara, tu teléfono necesita que la web cargue mediante **HTTPS**. 
 
-  Para desarrollo local, copiá `config.example.js` a `config.js` y completá los valores a mano (`config.js` no se sube al repo).
+Este proyecto incluye configuración lista para **GitHub Pages**:
 
-  **Si el deploy falla con `Deployment cancelled`:**
-  - En **Actions**, desactivá el workflow `pages-build-deployment` si aparece (choca con el deploy custom).
-  - Esperá a que no haya ningún workflow en ejecución.
-  - Ejecutá **Deploy to GitHub Pages** una sola vez (no hagas push y "Run workflow" al mismo tiempo).
-- **Netlify / Vercel** (plan gratis): arrastrás la carpeta con los archivos y te dan una URL HTTPS al instante.
-- **Probar en tu red local**: si querés probarlo ya mismo desde tu compu, corré un servidor simple en la carpeta (por ejemplo `npx serve .` o `python3 -m http.server`) y abrí esa dirección desde el celular conectado al mismo WiFi. Ojo: sin HTTPS, algunos navegadores igual permiten la cámara en la misma red local, pero no siempre — para uso real conviene GitHub Pages/Netlify.
+1. En tu repositorio en GitHub, ve a **Settings → Secrets and variables → Actions → New repository secret** y crea dos secretos:
+   - `GEMINI_API_KEY`: Tu API key gratuita obtenida en [Google AI Studio](https://aistudio.google.com/apikey).
+   - `APPS_SCRIPT_URL`: La URL `/exec` que obtuviste en el Paso 1.
+2. En **Settings → Pages → Build and deployment**, selecciona **Source: GitHub Actions**.
+3. Ejecuta el workflow (en la pestaña **Actions**, selecciona "Deploy to GitHub Pages" y "Run workflow"). 
+4. El workflow inyectará los secretos en un archivo `config.js` y publicará tu app automáticamente en tu dominio de GitHub Pages.
 
-## Paso 3 — Usar la app
+*(Nota: Para proteger tu `GEMINI_API_KEY`, ve a la consola de Google Cloud y restringe el uso de la API por HTTP Referrer para que solo funcione desde tu dominio `https://tuusuario.github.io/*`).*
 
-1. Abrí la URL en el navegador del celular.
-2. Tocá **Sacar foto de la carta**, apuntá bien al nombre de la carta (que quede legible y derecho).
-3. Esperá el resultado. Si la IA no lee bien el nombre, corregilo a mano y tocá **Buscar de nuevo**.
-4. Tocá **Agregar a Google Sheets** — la fila aparece en tu hoja con imagen, nombre, edición y precio.
+#### Desarrollo Local
 
-## Limitaciones de este prototipo (a tener en cuenta)
+Si deseas probarlo localmente:
+1. Copia `config.example.js` y renómbralo a `config.js`.
+2. Completa los valores de `GEMINI_API_KEY` y `APPS_SCRIPT_URL`.
+3. Ejecuta un servidor local (ej. `npx serve .` o el plugin Live Server en VS Code).
 
-- Gemini identifica la carta por visión; con buena luz y foto derecha funciona bien. Con fundas muy reflectantes, cartas en otro idioma o mal enfocadas, puede fallar — por eso está el campo para corregir el nombre a mano.
-- Los precios de Scryfall se actualizan a diario (no es el precio "en el momento exacto" al centavo, sino el último precio de mercado que Scryfall tiene registrado, tomado de TCGplayer/Cardmarket).
-- Cartas con dos caras (transform, MDFC) traen la imagen del frente.
-- No hay control de duplicados: si escaneás la misma carta dos veces, se agregan dos filas.
+## ⚠️ Limitaciones Conocidas
 
-## Posibles mejoras futuras
+- **Reconocimiento visual:** Funciona bien con buena luz. Fundas altamente reflectantes, cartas en otro idioma que no sea inglés, o fotos movidas pueden hacer que la IA falle. Siempre puedes escribir el nombre a mano.
+- **Precios de Scryfall:** No es el valor "en tiempo real" al segundo, sino el último valor promedio consolidado por Scryfall desde plataformas como TCGplayer o Cardmarket.
+- **Cartas de dos caras:** Actualmente mostrarán la imagen frontal por defecto.
+- **Duplicados:** No hay control de duplicidad actual; si escaneas la misma carta dos veces, se generarán dos filas separadas.
 
-- Reconocimiento visual real (embeddings de imagen) en vez de solo OCR del nombre, para más precisión con fotos imperfectas.
-- Guía visual en cámara (marco con el aspect ratio de una carta) para fotos más consistentes.
-- Detección de duplicados y opción de sumar cantidad en vez de fila nueva.
-- Elegir edición específica cuando el nombre coincide con varias impresiones.
-- Registrar si la carta es foil (afecta el precio).
+## 🔮 Futuras Mejoras Posibles
+
+- Implementar reconocimiento real por embeddings (reconocimiento de la imagen de arte) en lugar de OCR al texto, mejorando la precisión en cartas no inglesas o fotos difíciles.
+- Agregar un marco o guía visual con el *aspect ratio* en la vista de la cámara para fotos más consistentes.
+- Sistema de detección de duplicados para aumentar la "Cantidad" de una carta existente en vez de crear una nueva fila.
+- Selector de edición para cuando el nombre coincide con muchas reimpresiones y la IA no pudo leer el set.
+
+---
+*Datos de cartas e imágenes cortesía de [Scryfall](https://scryfall.com). Este proyecto no está afiliado ni patrocinado por Wizards of the Coast o Scryfall.*
