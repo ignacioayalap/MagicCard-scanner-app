@@ -1,80 +1,84 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#141420">
-<title>MTG Scanner</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#141420">
+  <title>MTG Scanner</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<header class="app-header">
-  <h1>🪄 MTG Scanner</h1>
-  <p class="subtitle">Escaneá una carta y cargala en tu Google Sheet</p>
-</header>
+  <header class="app-header">
+    <h1>MTG Scanner</h1>
+    <p class="subtitle">Escaneá la carta, revisá que se identificó bien y cargala en la planilla putito</p>
+  </header>
 
-<main>
+  <main>
 
-  <!-- Escaneo -->
-  <section class="card">
-    <h2>Escanear carta</h2>
-    <button type="button" id="foilToggleBtn" class="toggle-btn" aria-pressed="false">✨ Foil: No</button>
-    <label class="capture-btn" for="cameraInput">
-      📷 Sacar foto de la carta
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-    </label>
-    <canvas id="preview" hidden></canvas>
-    <p id="ocrStatus" class="status"></p>
-  </section>
+    <!-- Escaneo -->
+    <section class="card">
+      <h2>Escanear carta</h2>
+      <button type="button" id="foilToggleBtn" class="toggle-btn" aria-pressed="false">✨ Foil: No</button>
+      <label class="capture-btn" for="cameraInput">
+        📷 Sacar foto de la carta
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+      </label>
+      <canvas id="preview" hidden></canvas>
+      <p id="ocrStatus" class="status"></p>
+    </section>
 
-  <!-- Resultado -->
-  <section id="resultSection" class="card" hidden>
-    <h2>Carta identificada</h2>
+    <!-- Resultado -->
+    <section id="resultSection" class="card" hidden>
+      <h2>Carta identificada</h2>
 
-    <div class="result-box">
-      <img id="cardImage" alt="Imagen de la carta">
-      <div class="result-fields">
-        <label>Nombre
-          <input type="text" id="cardName">
-        </label>
-        <label>Edición
-          <input type="text" id="cardSet" readonly>
-        </label>
-        <label class="foil-checkbox">
-          <input type="checkbox" id="cardFoilCheckbox"> Es Foil
-        </label>
-        <label>Precio USD
-          <input type="text" id="cardPriceUsd" readonly>
-        </label>
-        <label>Precio EUR
-          <input type="text" id="cardPriceEur" readonly>
-        </label>
+      <div class="result-box">
+        <img id="cardImage" alt="Imagen de la carta">
+        <div class="result-fields">
+          <label>Nombre
+            <input type="text" id="cardName">
+          </label>
+          <label>Edición
+            <input type="text" id="cardSet" readonly>
+          </label>
+          <label class="foil-checkbox">
+            <input type="checkbox" id="cardFoilCheckbox"> Es Foil
+          </label>
+          <label>Precio USD
+            <input type="text" id="cardPriceUsd" readonly>
+          </label>
+          <label>Precio EUR
+            <input type="text" id="cardPriceEur" readonly>
+          </label>
+        </div>
       </div>
-    </div>
 
-    <div class="result-actions">
-      <button id="researchBtn">🔍 Buscar de nuevo con este nombre</button>
-      <button id="addToSheetBtn" class="primary">➕ Agregar a Google Sheets</button>
-    </div>
-    <p id="sheetStatus" class="status"></p>
-  </section>
+      <div class="result-actions">
+        <button id="researchBtn">🔍 Buscar de nuevo con este nombre</button>
+        <button id="addToSheetBtn" class="primary">➕ Agregar a Google Sheets</button>
+      </div>
+      <p id="sheetStatus" class="status"></p>
+    </section>
 
-  <section id="manualSection" class="card" hidden>
-    <h2>¿No se leyó bien el nombre?</h2>
-    <p class="hint">Escribilo manualmente y volvé a buscar.</p>
-    <input type="text" id="manualNameInput" placeholder="Nombre de la carta (en inglés funciona mejor)">
-    <button id="manualSearchBtn">Buscar en Scryfall</button>
-  </section>
+    <section id="manualSection" class="card" hidden>
+      <h2>¿No se leyó bien el nombre?</h2>
+      <p class="hint">Escribilo manualmente y volvé a buscar.</p>
+      <input type="text" id="manualNameInput" placeholder="Nombre de la carta (en inglés funciona mejor)">
+      <button id="manualSearchBtn">Buscar en Scryfall</button>
+    </section>
 
-</main>
+  </main>
 
-<footer>
-  <p>Datos de cartas y precios vía <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a> (gratis, sin API key).</p>
-</footer>
+  <footer>
+    <p>Datos de cartas y precios vía <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a> (gratis,
+      sin API key).</p>
+  </footer>
 
-<script src="config.js?v=4"></script>
-<script src="app.js?v=4"></script>
+  <script src="config.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
+
 </html>
