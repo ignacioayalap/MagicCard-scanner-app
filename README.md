@@ -4,7 +4,7 @@ Una aplicación web progresiva (PWA) diseñada para escanear tus cartas de Magic
 
 Sin necesidad de descargar apps pesadas ni pagar suscripciones, esta herramienta combina **inteligencia artificial** y **APIs gratuitas** para facilitarte el trabajo de inventariar tu colección.
 
-## ✨ Características
+## Características
 
 - 📷 **Escaneo inteligente**: Saca una foto de la carta y la aplicación usará **Gemini 2.5 Flash** para identificar el nombre de la carta y su edición.
 - 🔍 **Búsqueda automática**: Obtiene instantáneamente la imagen de la carta, nombre de la edición y precios actualizados en USD y EUR usando la API pública de **Scryfall**.
